@@ -3,36 +3,15 @@
 
 namespace Fragment_Shaders
 {
-    std::string default_shader = R"(
+    std::string vertex = R"(
         #version 330 core
             
-        layout(location = 0) out vec4 color;
+        in vec3 v_vertexColors;
+        out vec4 color;
 
         void main()
         {
-            color = vec4(0.0, 0.5, 0.5, 1.0);
-        }
-    )";
-
-    std::string grey = R"(
-        #version 330 core
-            
-        layout(location = 0) out vec4 color;
-
-        void main()
-        {
-            color = vec4(0.7, 0.7, 0.8, 1.0);
-        }
-    )";
-
-    std::string red = R"(
-        #version 330 core
-            
-        layout(location = 0) out vec4 color;
-
-        void main()
-        {
-            color = vec4(1.0, 0.0, 0.0, 1.0);
+            color = vec4(v_vertexColors.r, v_vertexColors.g, v_vertexColors.b, 1.0);
         }
     )";
 };

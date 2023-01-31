@@ -10,6 +10,18 @@
 #include <fstream>
 #include <string>
 
+// DeltaTime STD
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
+#include <cstdint>
+#include <thread>
+
+// DeltaTime variables
+static std::condition_variable cv;
+static std::mutex             mut;
+// static const int dt_max;
+
 // Globals
 int gScreenWidth = 1920*0.25;
 int gScreenHeight = 1080*0.25;
@@ -26,9 +38,10 @@ GLuint gVertexBufferObject = 0;
 // Program objects for our shaders
 GLuint gGraphicsPiplineShaderProgram = 0;
 
+GLuint shaderObject;
+
 GLuint CompileShader(GLuint type, const std::string& source)
 {
-    GLuint shaderObject;
     if(type == GL_VERTEX_SHADER)
     {
         shaderObject = glCreateShader(GL_VERTEX_SHADER);
@@ -63,7 +76,7 @@ GLuint CreateShaderProgram(const std::string& vertexShader, const std::string& f
 
 void CreateGraphicsPipeline()
 {
-    gGraphicsPiplineShaderProgram = CreateShaderProgram( Vertex_Shaders::default_shader, Fragment_Shaders::grey);
+    gGraphicsPiplineShaderProgram = CreateShaderProgram( Vertex_Shaders::vertex, Fragment_Shaders::vertex);
 }
 
 void GetOpenGLVersionInfo()
@@ -76,13 +89,16 @@ void GetOpenGLVersionInfo()
 
 void VertexSpecification()
 {
-    // cpu vertex points
-    const std::vector<GLfloat> vertexPosition
+    // cpu vertex positions
+    const std::vector<GLfloat> vertexData
     {
-        // x,      y,    z
-        -0.8f, -0.8f, 0.0f,
-        0.8f, -0.8f, 0.0f,
-        0.0f, 0.8f, 0.0f
+        // x,      y,     z
+        -0.8f, -0.8f,  0.0f, // Left Position
+         1.0f,  0.0f,  0.0f, // Color
+         0.8f, -0.8f,  0.0f, // Right Position
+         0.0f,  1.0f,  0.0f, // Color
+         0.0f,  0.8f,  0.0f, // Top Position
+         0.0f,  0.0f,  1.0f, // Color
     };
 
     // Setting things up for the gpu
@@ -91,24 +107,36 @@ void VertexSpecification()
 
     // Generate VBO
     glGenBuffers(1, &gVertexBufferObject);
-    glBindBuffer(GL_ARRAY_BUFFER, gVertexArrayObject);
+    glBindBuffer(GL_ARRAY_BUFFER, gVertexBufferObject);
     glBufferData(
         GL_ARRAY_BUFFER,
-        vertexPosition.size() * sizeof(GLfloat),
-        vertexPosition.data(),
+        vertexData.size() * sizeof(GLfloat),
+        vertexData.data(),
         GL_STATIC_DRAW);
     
+    // Vertex Position Information
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(
         0, 
         3, 
         GL_FLOAT,
         GL_FALSE,
-        0,
-        (void*)0);
+        sizeof(GL_FLOAT)*6,
+        (GLvoid*)0);
+
+    // Vertex Color Information
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(
+        1, 
+        3, 
+        GL_FLOAT,
+        GL_FALSE,
+        sizeof(GL_FLOAT)*6,
+        (GLvoid*)(sizeof(GL_FLOAT)*3));
     
     glBindVertexArray(0);
     glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
 }
 
 void InitializeProgram()
@@ -130,7 +158,7 @@ void InitializeProgram()
         "SDL Opengl", 
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 
         gScreenWidth, gScreenHeight, 
-        SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL | SDL_RENDERER_ACCELERATED);
+        SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL | SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     
     
     if (gGraphicsApplicationWindow==nullptr)
@@ -191,15 +219,27 @@ void Draw()
 
 void MainLoop()
 {
-    while(!gQuit)
+    using delta = std::chrono::duration<std::int64_t, std::ratio<1, 40>>;
+    auto next = std::chrono::steady_clock::now() + delta{1};
+    std::unique_lock<std::mutex> lk(mut);
+    while (!gQuit)
     {
+        mut.unlock();
+
+        // Loop Game Code Start
         Input();
         PreDraw();
         Draw();
 
         // Update screen
         SDL_GL_SwapWindow(gGraphicsApplicationWindow);
-    } 
+        // Loop Game Code End
+
+        // Wait for the next 1/40 sec
+        mut.lock();
+        cv.wait_until(lk, next, []{return false;});
+        next += delta{1};
+    }
 }
 
 void Cleanup()
@@ -209,6 +249,9 @@ void Cleanup()
 }
 
 int main(int argc, char *argv[]) {
+    (void)argc;
+    (void)argv;
+
     InitializeProgram();
     VertexSpecification();
     CreateGraphicsPipeline();
