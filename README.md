@@ -16,4 +16,4 @@ make
 ~~~
 It should compile an exe in the build folder, and open a window with a light blue tinted Triangle with a darker blue background.
 
-![image](https://user-images.githubusercontent.com/11281480/215659296-c0e7b9f9-2b50-4d75-b9db-c32279641979.png)
+![image](https://user-images.githubusercontent.com/11281480/215831880-63fd9bce-a175-45b0-b4ba-3908c5d25465.png)
