@@ -1,17 +1,17 @@
 GX:= g++
-FLAGS:= -std=c++17 -Wall
+FLAGS:= -std=c++17 -Wall -O3 -W -s -mwindows
 NAME:= SDL_GL
 TYPE:= .exe
 INCLUDES:= -Isrc/include -IC:/Dev/SDL2/include -IC:/Dev/Glad/include -Isrc/shaders
 LIBS:= -LC:/Dev/SDL2/lib/x64
-OUT:= build/${NAME}.exe C:/Dev/Glad/src/glad.c
-FILES:= src/main.cpp
+OUT:= build/${NAME}
+FILES:= src/main.cpp C:/Dev/Glad/src/glad.c
 LINKS:= -lSDL2main -lSDL2
 
 default:
-	make -j4 build_exe && make run
+	make build && make run
 
-build_exe:
+build:
 	${GX} ${FLAGS} ${INCLUDES} ${LIBS} ${FILES} -o ${OUT} ${LINKS}
 
 run:
