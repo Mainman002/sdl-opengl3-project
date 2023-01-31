@@ -1,6 +1,8 @@
 # sdl-opengl3-project
 A test project to see how well SDL2 and OpenGL3 can work together.
 
+Based on Mike Shah's tutorial series [Link](https://www.youtube.com/watch?v=Q7vm264YNrM&list=PLvv0ScY6vfd9zlZkIIqGDeG5TUWswkMox)
+
 ## Dependancies
 * G++
 * SDL2 [Link](https://github.com/libsdl-org/SDL/releases/tag/release-2.26.2)
